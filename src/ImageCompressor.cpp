@@ -113,10 +113,6 @@ void ImageCompressor::processImage() {
             << std::endl;
   std::cout << "[OUTPUT] Kedalaman pohon: " << treeDepth << std::endl;
   std::cout << "[OUTPUT] Banyak simpul pada pohon: " << nodeCount << std::endl;
-  std::cout << "[OUTPUT] Gambar hasil kompresi disimpan di: " << outputImagePath
-            << std::endl;
-  std::cout << "[OUTPUT] GIF proses kompresi disimpan di: " << gifPath
-            << std::endl;
 }
 
 // Return a new Metric instance based on the user's selected error method.
@@ -191,6 +187,8 @@ void ImageCompressor::saveImage() {
 
   FreeImage_Unload(bitmap);
   FreeImage_DeInitialise();
+  std::cout << "[OUTPUT] Gambar hasil kompresi disimpan di: " << outputImagePath
+            << std::endl;
 }
 
 // Save a GIF animation of the compression process using ImageMagick.
@@ -244,7 +242,8 @@ void ImageCompressor::saveGif() {
                   << std::endl;
     }
   }
-  std::cout << "GIF kompresi berhasil disimpan di: " << gifPath << std::endl;
+  std::cout << "[OUTPUT] GIF proses kompresi disimpan di: " << gifPath
+            << std::endl;
 }
 
 // Run the complete image compression process.
