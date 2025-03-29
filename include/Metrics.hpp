@@ -42,7 +42,7 @@ class SSIMetric : public Metric {
   private:
    double threshold;
   public:
-  SSIMetric(double threshold) : threshold(threshold) {}
+  SSIMetric(double threshold);
   double compute(const std::vector<std::vector<Color>>& pixels, int x, int y,
                  int width, int height) override;
 };
