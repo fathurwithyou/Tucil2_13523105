@@ -1,5 +1,11 @@
 #include "ImageCompressor.hpp"
 
+double getFileSizeInMB(const std::string& filename) {
+  struct stat st;
+  if (stat(filename.c_str(), &st) != 0) return -1;
+  return st.st_size / (1024.0 * 1024.0);
+}
+
 // Load image from the input path and populate pixelData.
 void ImageCompressor::loadImageFromPath() {
   FreeImage_Initialise();
@@ -35,87 +41,67 @@ void ImageCompressor::loadImageFromPath() {
   FreeImage_DeInitialise();
 }
 
-/* Get user input for paths, error method, threshold, block size, and target
- compression. */
+// Get user input for paths, error method, threshold, block size, and target
+// compression.
 void ImageCompressor::getInput() {
-  std::cout << "Masukkan alamat absolut gambar yang akan dikompresi: ";
+  std::cout << "Enter the absolute path of the image to compress: ";
   std::getline(std::cin, inputImagePath);
   if (inputImagePath.empty()) {
-    std::cerr << "Error: Alamat gambar tidak boleh kosong!\n";
+    std::cerr << "Error: Image path cannot be empty!\n";
     exit(1);
   }
 
-  std::cout << "Pilih metode perhitungan error (1: Variance, 2: MAD, 3: Max "
-               "Pixel Difference, 4: Entropy, 5. Structural Similarity Index): ";
+  std::cout << "Choose error calculation method (1: Variance, 2: MAD, 3: Max "
+               "Pixel Difference, 4: Entropy, 5: SSIM): ";
   if (!(std::cin >> errorMethod) || (errorMethod < 1 || errorMethod > 5)) {
-    std::cerr << "Error: Metode perhitungan error tidak valid!\n";
+    std::cerr << "Error: Invalid error method!\n";
     exit(1);
   }
 
-  std::cout << "Masukkan ambang batas: ";
+  std::cout << "Enter threshold value: ";
   if (!(std::cin >> threshold) || threshold < 0) {
-    std::cerr << "Error: Ambang batas harus bilangan non-negatif!\n";
+    std::cerr << "Error: Threshold must be non-negative!\n";
     exit(1);
   }
 
-  std::cout << "Masukkan ukuran blok minimum: ";
+  std::cout << "Enter minimum block size: ";
   if (!(std::cin >> minBlockSize) || minBlockSize <= 0) {
-    std::cerr << "Error: Ukuran blok minimum harus lebih besar dari 0!\n";
+    std::cerr << "Error: Minimum block size must be greater than 0!\n";
     exit(1);
   }
 
-  std::cout
-      << "Masukkan target persentase kompresi (1.0 = 100%, 0 untuk nonaktif): ";
+  std::cout << "Enter target compression ratio (1.0 = 100%, 0 to disable): ";
   if (!(std::cin >> targetCompression) || targetCompression < 0 ||
       targetCompression > 1.0) {
-    std::cerr << "Error: Target persentase kompresi harus antara 0 dan 1.0!\n";
+    std::cerr << "Error: Target compression must be between 0 and 1.0!\n";
     exit(1);
   }
 
   std::cin.ignore();
-  std::cout << "Masukkan alamat absolut gambar hasil kompresi: ";
+  std::cout << "Enter the absolute path for the compressed image: ";
   std::getline(std::cin, outputImagePath);
   if (outputImagePath.empty()) {
-    std::cerr << "Error: Alamat output tidak boleh kosong!\n";
+    std::cerr << "Error: Output path cannot be empty!\n";
     exit(1);
   }
 
-  std::cout << "Masukkan alamat absolut file GIF (bonus): ";
+  std::cout << "Enter the absolute path for the GIF file (optional): ";
   std::getline(std::cin, gifPath);
 }
 
-// Process image: load image, build quadtree, and display compression stats.
+// Process image: load image, build quadtree, and measure execution time.
 void ImageCompressor::processImage() {
-  auto start = std::chrono::high_resolution_clock::now();
   loadImageFromPath();
-  int originalWidth = pixelData[0].size();
-  int originalHeight = pixelData.size();
-  int originalSize = originalWidth * originalHeight;
+
+  auto start = std::chrono::high_resolution_clock::now();
+
   quadtree = new Quadtree(pixelData, threshold, getMetric(), minBlockSize);
 
   auto end = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> execTime = end - start;
-
-  int treeDepth = quadtree->getTreeDepth();
-  int nodeCount = quadtree->getNodeCount();
-  int leafCount = quadtree->getLeafCount();
-  double compressionPercentage =
-      (1 - (static_cast<double>(leafCount) / originalSize)) * 100.0;
-
-  std::cout << "\n[OUTPUT] Waktu eksekusi: " << execTime.count() << " detik"
-            << std::endl;
-  std::cout << "[OUTPUT] Ukuran gambar sebelum: " << originalWidth << " x "
-            << originalHeight << " (" << originalSize << " piksel)"
-            << std::endl;
-  std::cout << "[OUTPUT] Ukuran gambar setelah: " << leafCount << " blok"
-            << std::endl;
-  std::cout << "[OUTPUT] Persentase kompresi: " << compressionPercentage << "%"
-            << std::endl;
-  std::cout << "[OUTPUT] Kedalaman pohon: " << treeDepth << std::endl;
-  std::cout << "[OUTPUT] Banyak simpul pada pohon: " << nodeCount << std::endl;
+  execTime = end - start;
 }
 
-// Return a new Metric instance based on the user's selected error method.
+// Return a new Metric instance based on the chosen error method.
 Metric* ImageCompressor::getMetric() {
   switch (errorMethod) {
     case 1:
@@ -137,7 +123,7 @@ Metric* ImageCompressor::getMetric() {
 void ImageCompressor::saveImage() {
   int width = pixelData[0].size();
   int height = pixelData.size();
-  bool drawOutline = 0;
+  bool drawOutline = false;
 
   FreeImage_Initialise();
   FIBITMAP* bitmap = FreeImage_Allocate(width, height, 24);
@@ -147,7 +133,6 @@ void ImageCompressor::saveImage() {
     return;
   }
 
-  // Lambda to draw each quadtree node (filled rectangle with optional outline).
   std::function<void(QuadtreeNode*)> drawNode = [&](QuadtreeNode* node) {
     if (node->isLeaf) {
       for (int y = node->y; y < node->y + node->height; y++) {
@@ -159,8 +144,8 @@ void ImageCompressor::saveImage() {
           FreeImage_SetPixelColor(bitmap, x, y, &col);
         }
       }
-      RGBQUAD outline = {0, 0, 0, 0};
       if (drawOutline) {
+        RGBQUAD outline = {0, 0, 0, 0};
         for (int x = node->x; x < node->x + node->width; x++)
           FreeImage_SetPixelColor(bitmap, x, node->y, &outline);
         for (int x = node->x; x < node->x + node->width; x++)
@@ -178,17 +163,18 @@ void ImageCompressor::saveImage() {
       }
     }
   };
+
   drawNode(quadtree->getRoot());
 
   if (!FreeImage_Save(FIF_JPEG, bitmap, outputImagePath.c_str(),
                       JPEG_QUALITYGOOD)) {
-    std::cerr << "Error: Gagal menyimpan gambar sebagai JPG." << std::endl;
+    std::cerr << "Error: Failed to save the image as JPG." << std::endl;
+  } else {
+    std::cout << "[OUTPUT] Compressed image saved at: " << outputImagePath
+              << std::endl;
   }
-
   FreeImage_Unload(bitmap);
   FreeImage_DeInitialise();
-  std::cout << "[OUTPUT] Gambar hasil kompresi disimpan di: " << outputImagePath
-            << std::endl;
 }
 
 // Save a GIF animation of the compression process using ImageMagick.
@@ -242,14 +228,29 @@ void ImageCompressor::saveGif() {
                   << std::endl;
     }
   }
-  std::cout << "[OUTPUT] GIF proses kompresi disimpan di: " << gifPath
-            << std::endl;
+  std::cout << "[OUTPUT] GIF saved at: " << gifPath << std::endl;
+}
+
+void ImageCompressor::showStats() {
+  printf("----------------- [ STATS ] -----------------\n");
+  printf("[INFO] Max Depth: %d\n", quadtree->getTreeDepth());
+  printf("[INFO] Execution Time: %.2f sec\n", execTime.count());
+  printf("[INFO] Original File Size: %.2f MB\n",
+         getFileSizeInMB(inputImagePath));
+  printf("[INFO] Compressed File Size: %.2f MB\n",
+         getFileSizeInMB(outputImagePath));
+
+  double compressPercentage =
+      (1 - getFileSizeInMB(outputImagePath) / getFileSizeInMB(inputImagePath)) *
+      100;
+  printf("[INFO] Compression Percentage: %.2f%%\n", compressPercentage);
 }
 
 // Run the complete image compression process.
 void ImageCompressor::run() {
   getInput();
   processImage();
+  showStats();
   saveImage();
   saveGif();
   delete quadtree;

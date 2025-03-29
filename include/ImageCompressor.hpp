@@ -7,6 +7,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <functional>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -22,6 +23,7 @@ class ImageCompressor {
   int errorMethod;
   double threshold;
   int minBlockSize;
+  std::chrono::duration<double> execTime;
   double targetCompression;
   std::string outputImagePath;
   std::string gifPath;
@@ -34,6 +36,7 @@ class ImageCompressor {
   void saveImage();
   void saveGif();
   void loadImageFromPath();
+  void showStats();
   Metric* getMetric();
 
  public:
