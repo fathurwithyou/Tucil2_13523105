@@ -133,8 +133,6 @@ Metric* ImageCompressor::getMetric() {
 
 // Save the compressed image to the output path.
 void ImageCompressor::saveImage() {
-  std::cout << "Menyimpan gambar hasil kompresi di: " << outputImagePath
-            << std::endl;
   int width = pixelData[0].size();
   int height = pixelData.size();
   bool drawOutline = 0;
