@@ -9,6 +9,9 @@ QuadtreeNode::QuadtreeNode(int _x, int _y, int _width, int _height)
 
 QuadtreeNode::~QuadtreeNode() {
   for (int i = 0; i < 4; i++) {
-    delete children[i];
+    if (children[i]) {
+      delete children[i];
+      children[i] = nullptr;
+    }
   }
 }
