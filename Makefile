@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -Wall -std=c++11 -Iinclude
+CXXFLAGS = -Wall -std=c++17 -Iinclude
 
 SRC_DIR = src
 BIN_DIR = bin
@@ -13,7 +13,7 @@ all: $(TARGET)
 	$(TARGET)
 
 $(TARGET): $(OBJECTS) | $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^ -lfreeimage
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
