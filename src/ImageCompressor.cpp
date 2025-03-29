@@ -1,5 +1,6 @@
 #include "ImageCompressor.hpp"
 
+// Load image from the input path and populate pixelData.
 void ImageCompressor::loadImageFromPath() {
   FreeImage_Initialise();
   FIBITMAP* bitmap =
@@ -34,6 +35,8 @@ void ImageCompressor::loadImageFromPath() {
   FreeImage_DeInitialise();
 }
 
+/* Get user input for paths, error method, threshold, block size, and target
+ compression. */
 void ImageCompressor::getInput() {
   std::cout << "Masukkan alamat absolut gambar yang akan dikompresi: ";
   std::getline(std::cin, inputImagePath);
@@ -81,6 +84,7 @@ void ImageCompressor::getInput() {
   std::getline(std::cin, gifPath);
 }
 
+// Process image: load image, build quadtree, and display compression stats.
 void ImageCompressor::processImage() {
   auto start = std::chrono::high_resolution_clock::now();
   loadImageFromPath();
@@ -115,6 +119,7 @@ void ImageCompressor::processImage() {
             << std::endl;
 }
 
+// Return a new Metric instance based on the user's selected error method.
 Metric* ImageCompressor::getMetric() {
   switch (errorMethod) {
     case 1:
@@ -130,12 +135,13 @@ Metric* ImageCompressor::getMetric() {
   }
 }
 
+// Save the compressed image to the output path.
 void ImageCompressor::saveImage() {
   std::cout << "Menyimpan gambar hasil kompresi di: " << outputImagePath
             << std::endl;
   int width = pixelData[0].size();
   int height = pixelData.size();
-  bool drawOutline = false;
+  bool drawOutline = 0;
 
   FreeImage_Initialise();
   FIBITMAP* bitmap = FreeImage_Allocate(width, height, 24);
@@ -145,7 +151,7 @@ void ImageCompressor::saveImage() {
     return;
   }
 
-  // Lambda to draw a filled rectangle and an outline around it.
+  // Lambda to draw each quadtree node (filled rectangle with optional outline).
   std::function<void(QuadtreeNode*)> drawNode = [&](QuadtreeNode* node) {
     if (node->isLeaf) {
       for (int y = node->y; y < node->y + node->height; y++) {
@@ -157,35 +163,22 @@ void ImageCompressor::saveImage() {
           FreeImage_SetPixelColor(bitmap, x, y, &col);
         }
       }
-      RGBQUAD outline;
-      outline.rgbRed = 0;
-      outline.rgbGreen = 0;
-      outline.rgbBlue = 0;
+      RGBQUAD outline = {0, 0, 0, 0};
       if (drawOutline) {
-        for (int x = node->x; x < node->x + node->width; x++) {
+        for (int x = node->x; x < node->x + node->width; x++)
           FreeImage_SetPixelColor(bitmap, x, node->y, &outline);
-        }
-        // Bottom border
-        for (int x = node->x; x < node->x + node->width; x++) {
+        for (int x = node->x; x < node->x + node->width; x++)
           FreeImage_SetPixelColor(bitmap, x, node->y + node->height - 1,
                                   &outline);
-        }
-        // Left border
-        for (int y = node->y; y < node->y + node->height; y++) {
+        for (int y = node->y; y < node->y + node->height; y++)
           FreeImage_SetPixelColor(bitmap, node->x, y, &outline);
-        }
-        // Right border
-        for (int y = node->y; y < node->y + node->height; y++) {
+        for (int y = node->y; y < node->y + node->height; y++)
           FreeImage_SetPixelColor(bitmap, node->x + node->width - 1, y,
                                   &outline);
-        }
       }
-
     } else {
       for (int i = 0; i < 4; i++) {
-        if (node->children[i] != nullptr) {
-          drawNode(node->children[i]);
-        }
+        if (node->children[i] != nullptr) drawNode(node->children[i]);
       }
     }
   };
@@ -199,16 +192,15 @@ void ImageCompressor::saveImage() {
   FreeImage_Unload(bitmap);
   FreeImage_DeInitialise();
 }
-bool fileExists(const std::string& filename) {
-  struct stat buffer;
-  return (stat(filename.c_str(), &buffer) == 0);
-}
 
+// Save a GIF animation of the compression process using ImageMagick.
 void ImageCompressor::saveGif() {
-  std::cout << "Menyimpan GIF proses kompresi di: " << gifPath << std::endl;
-
   int maxDepth = quadtree->getTreeDepth();
   std::vector<std::string> frameFilenames;
+  auto isFileExist = [&](const std::string& filename) -> bool {
+    struct stat buffer;
+    return (stat(filename.c_str(), &buffer) == 0);
+  };
 
   for (int depth = 0; depth <= maxDepth; depth++) {
     FIBITMAP* frameBitmap = quadtree->createImage(depth, true);
@@ -231,7 +223,7 @@ void ImageCompressor::saveGif() {
   std::ostringstream cmd;
   cmd << "convert -delay 50 -loop 0";
   for (const auto& frame : frameFilenames) {
-    if (fileExists(frame))
+    if (isFileExist(frame))
       cmd << " " << frame;
     else
       std::cerr << "Warning: Frame file " << frame << " does not exist."
@@ -246,7 +238,7 @@ void ImageCompressor::saveGif() {
   }
 
   for (const auto& frame : frameFilenames) {
-    if (fileExists(frame)) {
+    if (isFileExist(frame)) {
       if (std::remove(frame.c_str()) != 0)
         std::cerr << "Error: Failed to remove temporary frame " << frame
                   << std::endl;
@@ -255,6 +247,7 @@ void ImageCompressor::saveGif() {
   std::cout << "GIF kompresi berhasil disimpan di: " << gifPath << std::endl;
 }
 
+// Run the complete image compression process.
 void ImageCompressor::run() {
   getInput();
   processImage();
