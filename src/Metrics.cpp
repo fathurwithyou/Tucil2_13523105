@@ -152,5 +152,5 @@ double SSIMetric::compute(const std::vector<std::vector<Color>>& pixels, int x,
       (2 * mean_x * mean_y + C1) * (2 * covar + C2) /
       ((mean_x * mean_x + mean_y * mean_y + C1) * (var_x + var_y + C2));
 
-  return ssim;
+  return 2 * threshold - x;
 }

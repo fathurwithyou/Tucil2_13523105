@@ -39,7 +39,10 @@ class EntropyMetric : public Metric {
 };
 
 class SSIMetric : public Metric {
- public:
+  private:
+   double threshold;
+  public:
+  SSIMetric(double threshold) : threshold(threshold) {}
   double compute(const std::vector<std::vector<Color>>& pixels, int x, int y,
                  int width, int height) override;
 };

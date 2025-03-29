@@ -126,6 +126,8 @@ Metric* ImageCompressor::getMetric() {
       return new MaxPixelDifferenceMetric();
     case 4:
       return new EntropyMetric();
+    case 5:
+      return new SSIMetric(threshold);
     default:
       return new VarianceMetric();
   }
