@@ -46,8 +46,8 @@ void ImageCompressor::getInput() {
   }
 
   std::cout << "Pilih metode perhitungan error (1: Variance, 2: MAD, 3: Max "
-               "Pixel Difference, 4: Entropy): ";
-  if (!(std::cin >> errorMethod) || (errorMethod < 1 || errorMethod > 4)) {
+               "Pixel Difference, 4: Entropy, 5. Structural Similarity Index): ";
+  if (!(std::cin >> errorMethod) || (errorMethod < 1 || errorMethod > 5)) {
     std::cerr << "Error: Metode perhitungan error tidak valid!\n";
     exit(1);
   }
