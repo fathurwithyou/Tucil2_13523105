@@ -38,4 +38,10 @@ class EntropyMetric : public Metric {
                  int width, int height) override;
 };
 
+class SSIMetric : public Metric {
+ public:
+  double compute(const std::vector<std::vector<Color>>& pixels, int x, int y,
+                 int width, int height) override;
+};
+
 #endif

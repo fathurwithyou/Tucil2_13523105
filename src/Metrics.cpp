@@ -1,5 +1,7 @@
 #include "Metrics.hpp"
 
+typedef long long ll;
+
 double VarianceMetric::compute(const std::vector<std::vector<Color>>& pixels,
                                int x, int y, int width, int height) {
   long sumR = 0, sumG = 0, sumB = 0;
@@ -99,4 +101,56 @@ double EntropyMetric::compute(const std::vector<std::vector<Color>>& pixels,
     }
   }
   return (entropyR + entropyG + entropyB) / 3.0;
+}
+
+double SSIMetric::compute(const std::vector<std::vector<Color>>& pixels, int x,
+                          int y, int width, int height) {
+  const double C1 = 0.01 * 255 * 0.01 * 255;  // (K1*L)^2
+  const double C2 = 0.03 * 255 * 0.03 * 255;  // (K2*L)^2
+
+  double mean_x = 0.0, mean_y = 0.0;
+  double var_x = 0.0, var_y = 0.0;
+  double covar = 0.0;
+
+  // rata-rata intensitas piksel
+  for (int i = x; i < x + width; i++) {
+    for (int j = y; j < y + height; j++) {
+      double intensity_x = 0.299 * pixels[i][j].r + 0.587 * pixels[i][j].g +
+                           0.114 * pixels[i][j].b;
+      double intensity_y = 0.299 * pixels[i][j + height].r +
+                           0.587 * pixels[i][j + height].g +
+                           0.114 * pixels[i][j + height].b;
+
+      mean_x += intensity_x;
+      mean_y += intensity_y;
+    }
+  }
+
+  int num_pixels = width * height;
+  mean_x /= num_pixels;
+  mean_y /= num_pixels;
+
+  for (int i = x; i < x + width; i++) {
+    for (int j = y; j < y + height; j++) {
+      double intensity_x = 0.299 * pixels[i][j].r + 0.587 * pixels[i][j].g +
+                           0.114 * pixels[i][j].b;
+      double intensity_y = 0.299 * pixels[i][j + height].r +
+                           0.587 * pixels[i][j + height].g +
+                           0.114 * pixels[i][j + height].b;
+
+      var_x += (intensity_x - mean_x) * (intensity_x - mean_x);
+      var_y += (intensity_y - mean_y) * (intensity_y - mean_y);
+      covar += (intensity_x - mean_x) * (intensity_y - mean_y);
+    }
+  }
+
+  var_x /= (num_pixels - 1);
+  var_y /= (num_pixels - 1);
+  covar /= (num_pixels - 1);
+
+  double ssim =
+      (2 * mean_x * mean_y + C1) * (2 * covar + C2) /
+      ((mean_x * mean_x + mean_y * mean_y + C1) * (var_x + var_y + C2));
+
+  return ssim;
 }
