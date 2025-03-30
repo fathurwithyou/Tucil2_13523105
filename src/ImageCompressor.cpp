@@ -232,7 +232,6 @@ void ImageCompressor::saveGif() {
 }
 
 void ImageCompressor::showStats() {
-  printf("----------------- [ STATS ] -----------------\n");
   printf("[INFO] Max Depth: %d\n", quadtree->getTreeDepth());
   printf("[INFO] Execution Time: %.2f sec\n", execTime.count());
   printf("[INFO] Original File Size: %.2f MB\n",
@@ -250,8 +249,9 @@ void ImageCompressor::showStats() {
 void ImageCompressor::run() {
   getInput();
   processImage();
-  showStats();
+  printf("----------------- [ STATS ] -----------------\n");
   saveImage();
   saveGif();
+  showStats();
   delete quadtree;
 }
