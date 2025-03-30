@@ -40,7 +40,8 @@ FIBITMAP* Quadtree::createImage(int customDepth, bool showLines) {
   return bitmap;
 }
 
-// Constructor: Build a quadtree from image data using the given threshold and metric.
+// Constructor: Build a quadtree from image data using the given threshold and
+// metric.
 Quadtree::Quadtree(const std::vector<std::vector<Color>>& data,
                    double threshold, Metric* metric, int minBlockSize)
     : pixelData(data),
@@ -52,12 +53,14 @@ Quadtree::Quadtree(const std::vector<std::vector<Color>>& data,
   root = buildQuadtree(0, 0, width, height);
 }
 
-// Destructor: Delete the root node, which recursively deletes the whole quadtree.
+// Destructor: Delete the root node, which recursively deletes the whole
+// quadtree.
 Quadtree::~Quadtree() { delete root; }
 
 // Calculate the average color for the specified block of the image.
-Color Quadtree::calculateAverageColor(const std::vector<std::vector<Color>>& data,
-                                        int x, int y, int width, int height) {
+Color Quadtree::calculateAverageColor(
+    const std::vector<std::vector<Color>>& data, int x, int y, int width,
+    int height) {
   float r = 0, g = 0, b = 0;
   int count = 0;
   for (int i = y; i < y + height; i++) {
@@ -75,8 +78,10 @@ Color Quadtree::calculateAverageColor(const std::vector<std::vector<Color>>& dat
   return Color{avgR, avgG, avgB};
 }
 
-// Recursively build the quadtree by subdividing blocks that exceed the threshold error.
-QuadtreeNode* Quadtree::buildQuadtree(int x, int y, int width, int height, int depth) {
+// Recursively build the quadtree by subdividing blocks that exceed the
+// threshold error.
+QuadtreeNode* Quadtree::buildQuadtree(int x, int y, int width, int height,
+                                      int depth) {
   float var = metric->compute(pixelData, x, y, width, height);
   QuadtreeNode* node = new QuadtreeNode(x, y, width, height);
   node->depth = depth;
@@ -87,9 +92,13 @@ QuadtreeNode* Quadtree::buildQuadtree(int x, int y, int width, int height, int d
     int halfWidth = width / 2;
     int halfHeight = height / 2;
     node->children[0] = buildQuadtree(x, y, halfWidth, halfHeight, depth + 1);
-    node->children[1] = buildQuadtree(x + halfWidth, y, width - halfWidth, halfHeight, depth + 1);
-    node->children[2] = buildQuadtree(x, y + halfHeight, halfWidth, height - halfHeight, depth + 1);
-    node->children[3] = buildQuadtree(x + halfWidth, y + halfHeight, width - halfWidth, height - halfHeight, depth + 1);
+    node->children[1] = buildQuadtree(x + halfWidth, y, width - halfWidth,
+                                      halfHeight, depth + 1);
+    node->children[2] = buildQuadtree(x, y + halfHeight, halfWidth,
+                                      height - halfHeight, depth + 1);
+    node->children[3] =
+        buildQuadtree(x + halfWidth, y + halfHeight, width - halfWidth,
+                      height - halfHeight, depth + 1);
   }
   return node;
 }
@@ -110,7 +119,8 @@ int Quadtree::getTreeDepth() const {
 
 // Count the total number of nodes in the quadtree (internal + leaf nodes).
 int Quadtree::getNodeCount() const {
-  std::function<int(QuadtreeNode*)> countNodes = [&](QuadtreeNode* node) -> int {
+  std::function<int(QuadtreeNode*)> countNodes =
+      [&](QuadtreeNode* node) -> int {
     if (!node) return 0;
     int count = 1;
     if (!node->isLeaf) {
@@ -125,7 +135,8 @@ int Quadtree::getNodeCount() const {
 
 // Count the number of leaf nodes in the quadtree.
 int Quadtree::getLeafCount() const {
-  std::function<int(QuadtreeNode*)> countLeaves = [&](QuadtreeNode* node) -> int {
+  std::function<int(QuadtreeNode*)> countLeaves =
+      [&](QuadtreeNode* node) -> int {
     if (!node) return 0;
     if (node->isLeaf) return 1;
     int count = 0;

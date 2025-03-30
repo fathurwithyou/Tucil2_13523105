@@ -135,7 +135,6 @@ double SSIMetric::compute(const std::vector<std::vector<Color>>& pixels, int x,
       var_x += (intensity_x - mean_x) * (intensity_x - mean_x);
     }
   }
-
   double var_y = 0.0;
   double covar = 0.0;
 
